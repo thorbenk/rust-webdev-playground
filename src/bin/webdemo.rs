@@ -191,10 +191,9 @@ fn page_login(_req: &mut Request) -> IronResult<Response> {
 }
 
 fn page_logout(req: &mut Request) -> IronResult<Response> {
-    let session_key = match req.get_cookie(SESSION_COOKIE) {
-        Some(cookie) => cookie.value.clone(),
-        None => String::new()
-    };
+    let session_key = req.get_cookie(SESSION_COOKIE)
+        .map_or(String::new(), |ref cookie| cookie.value.clone());
+
     let session_type = try!(req.get::<persistent::State<SessionType>>().map_err(|e| WebError::from(e)));
    
     match session_type.write() {
