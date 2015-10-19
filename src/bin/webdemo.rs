@@ -208,19 +208,15 @@ fn page_logout(req: &mut Request) -> IronResult<Response> {
     return Ok(Response::with((status::Found, redirect_url)));
 }
 
+fn extract_param<'a>(query_map: &'a urlencoded::QueryMap, key: &str) -> Option<&'a String> {
+    query_map.get(key).map_or(None, |v| v.first())
+}
+
 fn extract_credentials(query_map: &urlencoded::QueryMap) -> Option<(String, String)> {
-    let user = query_map.get("username".into()).and_then({
-        |values| match values.len() {
-            1 => Some(values[0].clone()),
-            _ => None
-        }});
-    let pass = query_map.get("password".into()).and_then({
-        |values| match values.len() {
-            1 => Some(values[0].clone()),
-            _ => None
-        }});
+    let user = extract_param(query_map, "username");
+    let pass = extract_param(query_map, "password");
     match (user, pass) {
-        (Some(user), Some(pass)) => Some((user, pass)),
+        (Some(user), Some(pass)) => Some((user.to_string(), pass.to_string())),
         _ => None
     }
 }
