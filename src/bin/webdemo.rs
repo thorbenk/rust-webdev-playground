@@ -136,6 +136,11 @@ struct Sessions(BTreeMap<String, SessionData>);
 
 static SESSION_COOKIE : &'static str = "_SESSION";
 
+static ALBUM_PATH  : &'static str = "/home/thorben/docs/devel/photobundle/dist/albums/";
+static CACHE_PATH  : &'static str = "/home/thorben/docs/devel/photobundle/dist/cache/";
+static ALBUM_ACCEL : &'static str = "/internal-albums/";
+static CACHE_ACCEL : &'static str = "/internal-cache/";
+
 impl iron::typemap::Key for SessionType {
     type Value = Sessions;
 }
@@ -259,6 +264,23 @@ fn try_login(req: &mut Request) -> IronResult<Response> {
     return Ok(resp);
 }
 
+fn page_album(req: &mut Request) -> IronResult<Response> {
+    let ref path = req.extensions.get::<Router>().unwrap().find("path").unwrap_or("/");
+    println!("{:?}", path);
+
+    let v: Vec<u8> = vec![ALBUM_ACCEL, path].concat().bytes().collect();
+
+    let s = String::from_utf8(v.clone());
+    println!("X-Accel-Redirect: {:?}", s);
+    
+    let mut r = Response::new();
+    r.status = Some(status::Ok);
+    r.headers.set_raw("X-Accel-Redirect", vec![v]);
+
+    Ok(r)
+    //Ok(Response::with((status::Ok, *path)))
+}
+
 fn main() {
     let mut router = Router::new();
 
@@ -267,6 +289,7 @@ fn main() {
     router.get("/login", page_login);
     router.post("/login", try_login);
     router.get("/logout", page_logout);
+    router.get("/albums/*path", page_album);
 
     let (logger_before, logger_after) = Logger::new(None);
 
